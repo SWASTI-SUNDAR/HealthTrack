@@ -1,24 +1,25 @@
-//
-//  ContentView.swift
-//  HealthTrack2
-//
-//  Created by Swasti Sundar Pradhan on 24/05/25.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            InputView()
+                .tabItem {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Log Entry")
+                }
+            
+            SummaryView()
+                .tabItem {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Text("Summary")
+                }
         }
-        .padding()
+        .accentColor(.blue)
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(HealthDataStore())
 }
