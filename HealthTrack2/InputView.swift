@@ -22,145 +22,357 @@ struct InputView: View {
     @State private var alertMessage = ""
     @State private var saveAnimation = false
     @State private var showingAchievement = false
+    @State private var pulseAnimation = false
+    @State private var cardAnimations: [Bool] = Array(repeating: false, count: 7)
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Enhanced Header with gradient
-                    VStack(spacing: 8) {
-                        Text("Daily Health Log")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.blue, .purple],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+            ZStack {
+                // Animated background gradient
+                LinearGradient(
+                    colors: [
+                        Color.blue.opacity(0.1),
+                        Color.purple.opacity(0.1),
+                        Color.pink.opacity(0.05),
+                        Color.white
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 20) {
+                        // Modern Header
+                        headerSection
                         
-                        Text("Track your daily wellness journey")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.top, 20)
-                    
-                    // Goals Progress Card
-                    if let todaysEntry = dataStore.getTodaysEntry() {
-                        GoalsProgressCard(entry: todaysEntry)
-                    }
-                    
-                    // Input Cards with enhanced design
-                    VStack(spacing: 16) {
-                        HealthInputCard(
-                            icon: "figure.walk",
-                            title: "Steps",
-                            subtitle: "Daily step count",
-                            value: $steps,
-                            placeholder: "10000",
-                            keyboardType: .numberPad,
-                            color: .green
-                        )
-                        
-                        HealthInputCard(
-                            icon: "drop.fill",
-                            title: "Water Intake",
-                            subtitle: "Liters consumed today",
-                            value: $waterIntake,
-                            placeholder: "2.5",
-                            keyboardType: .decimalPad,
-                            color: .blue
-                        )
-                        
-                        HealthInputCard(
-                            icon: "bed.double.fill",
-                            title: "Sleep Hours",
-                            subtitle: "Hours of sleep last night",
-                            value: $sleepHours,
-                            placeholder: "8.0",
-                            keyboardType: .decimalPad,
-                            color: .purple
-                        )
-                        
-                        HealthInputCard(
-                            icon: "heart.fill",
-                            title: "Heart Rate",
-                            subtitle: "Beats per minute",
-                            value: $heartRate,
-                            placeholder: "70",
-                            keyboardType: .numberPad,
-                            color: .red
-                        )
-                        
-                        HealthInputCard(
-                            icon: "flame.fill",
-                            title: "Calories Burned",
-                            subtitle: "Total calories today",
-                            value: $caloriesBurned,
-                            placeholder: "2000",
-                            keyboardType: .numberPad,
-                            color: .orange
-                        )
-                        
-                        HealthInputCard(
-                            icon: "scalemass.fill",
-                            title: "Weight",
-                            subtitle: "Current weight in kg",
-                            value: $weight,
-                            placeholder: "70.0",
-                            keyboardType: .decimalPad,
-                            color: .brown
-                        )
-                        
-                        // Mood Selector
-                        MoodSelectorCard(selectedMood: $selectedMood)
-                    }
-                    
-                    // Enhanced Save Button
-                    Button(action: saveEntry) {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.title2)
-                            Text("Save Today's Entry")
-                                .font(.headline)
-                                .fontWeight(.semibold)
+                        // Progress Card (if exists)
+                        if let todaysEntry = dataStore.getTodaysEntry() {
+                            ModernGoalsProgressCard(entry: todaysEntry)
+                                .scaleEffect(cardAnimations[0] ? 1.0 : 0.8)
+                                .opacity(cardAnimations[0] ? 1.0 : 0.0)
+                                .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1), value: cardAnimations[0])
                         }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [.blue, .purple, .pink]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .cornerRadius(16)
-                        .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
-                        .scaleEffect(saveAnimation ? 0.95 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0), value: saveAnimation)
+                        
+                        // Input Grid
+                        inputGridSection
+                        
+                        // Mood Section
+                        modernMoodSection
+                        
+                        // Save Button
+                        modernSaveButton
+                        
+                        Spacer(minLength: 30)
                     }
-                    .padding(.top, 8)
-                    
-                    Spacer(minLength: 20)
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
             }
             .navigationBarHidden(true)
-            .onAppear(perform: loadTodaysEntry)
+            .onAppear {
+                loadTodaysEntry()
+                animateCards()
+            }
             .alert("Health Entry", isPresented: $showingAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(alertMessage)
             }
             .overlay(
-                AchievementPopup(
+                ModernAchievementPopup(
                     achievements: achievementsManager.recentlyUnlocked,
                     isShowing: $showingAchievement
                 )
             )
         }
+    }
+    
+    private var headerSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Health Tracker")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.blue, .purple, .pink],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    
+                    Text("Let's log your wellness journey")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                // Animated wellness icon
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.blue.opacity(0.2), .purple.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 60, height: 60)
+                        .scaleEffect(pulseAnimation ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: pulseAnimation)
+                    
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(.pink)
+                }
+                .onAppear {
+                    pulseAnimation = true
+                }
+            }
+            
+            // Today's date card
+            HStack {
+                Image(systemName: "calendar")
+                    .foregroundColor(.blue)
+                
+                Text("Today, \(Date().formatted(date: .abbreviated, time: .omitted))")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                if let streakCount = getStreakCount() {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .foregroundColor(.orange)
+                        Text("\(streakCount) day streak")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.orange)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.orange.opacity(0.1))
+                    .cornerRadius(12)
+                }
+            }
+            .padding(16)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+        }
+        .padding(.top, 20)
+    }
+    
+    private var inputGridSection: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ], spacing: 16) {
+            ModernHealthCard(
+                icon: "figure.walk",
+                title: "Steps",
+                subtitle: "Daily count",
+                value: $steps,
+                placeholder: "10,000",
+                keyboardType: .numberPad,
+                color: .green,
+                index: 1
+            )
+            
+            ModernHealthCard(
+                icon: "drop.fill",
+                title: "Water",
+                subtitle: "Liters",
+                value: $waterIntake,
+                placeholder: "2.5",
+                keyboardType: .decimalPad,
+                color: .blue,
+                index: 2
+            )
+            
+            ModernHealthCard(
+                icon: "bed.double.fill",
+                title: "Sleep",
+                subtitle: "Hours",
+                value: $sleepHours,
+                placeholder: "8.0",
+                keyboardType: .decimalPad,
+                color: .purple,
+                index: 3
+            )
+            
+            ModernHealthCard(
+                icon: "heart.fill",
+                title: "Heart Rate",
+                subtitle: "BPM",
+                value: $heartRate,
+                placeholder: "70",
+                keyboardType: .numberPad,
+                color: .red,
+                index: 4
+            )
+            
+            ModernHealthCard(
+                icon: "flame.fill",
+                title: "Calories",
+                subtitle: "Burned",
+                value: $caloriesBurned,
+                placeholder: "2,000",
+                keyboardType: .numberPad,
+                color: .orange,
+                index: 5
+            )
+            
+            ModernHealthCard(
+                icon: "scalemass.fill",
+                title: "Weight",
+                subtitle: "Kilograms",
+                value: $weight,
+                placeholder: "70.0",
+                keyboardType: .decimalPad,
+                color: .brown,
+                index: 6
+            )
+        }
+    }
+    
+    private var modernMoodSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "face.smiling")
+                        .font(.title2)
+                        .foregroundColor(.yellow)
+                    
+                    Text("How are you feeling?")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.primary)
+                }
+                
+                Spacer()
+            }
+            
+            HStack(spacing: 12) {
+                ForEach(MoodLevel.allCases, id: \.self) { mood in
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            selectedMood = mood
+                        }
+                    }) {
+                        VStack(spacing: 8) {
+                            Text(mood.emoji)
+                                .font(.system(size: 28))
+                                .scaleEffect(selectedMood == mood ? 1.2 : 1.0)
+                            
+                            Text(mood.rawValue.prefix(4))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(selectedMood == mood ? mood.color : .secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(selectedMood == mood ? mood.color.opacity(0.2) : Color(.systemGray6))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(selectedMood == mood ? mood.color : Color.clear, lineWidth: 2)
+                                )
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedMood)
+                }
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(.systemBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        )
+        .scaleEffect(cardAnimations[6] ? 1.0 : 0.8)
+        .opacity(cardAnimations[6] ? 1.0 : 0.0)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.7), value: cardAnimations[6])
+    }
+    
+    private var modernSaveButton: some View {
+        Button(action: saveEntry) {
+            HStack(spacing: 12) {
+                if saveAnimation {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                }
+                
+                Text(saveAnimation ? "Saving..." : "Save Today's Entry")
+                    .font(.system(size: 18, weight: .semibold))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .background(
+                ZStack {
+                    // Animated background
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            LinearGradient(
+                                colors: [.blue, .purple, .pink],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    
+                    // Shimmer effect
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, .white.opacity(0.3), .clear],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .offset(x: saveAnimation ? 200 : -200)
+                        .animation(.linear(duration: 1.5).repeatForever(autoreverses: false), value: saveAnimation)
+                }
+            )
+            .scaleEffect(saveAnimation ? 0.98 : 1.0)
+            .shadow(color: .blue.opacity(0.4), radius: saveAnimation ? 20 : 15, x: 0, y: saveAnimation ? 10 : 8)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: saveAnimation)
+        }
+        .disabled(saveAnimation)
+        .padding(.top, 20)
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func animateCards() {
+        for i in 0..<cardAnimations.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.1) {
+                withAnimation {
+                    cardAnimations[i] = true
+                }
+            }
+        }
+    }
+    
+    private func getStreakCount() -> Int? {
+        let calendar = Calendar.current
+        var streak = 0
+        var currentDate = Date()
+        
+        for _ in 0..<30 {
+            if dataStore.entries.contains(where: { calendar.isDate($0.date, inSameDayAs: currentDate) }) {
+                streak += 1
+            } else {
+                break
+            }
+            currentDate = calendar.date(byAdding: .day, value: -1, to: currentDate) ?? currentDate
+        }
+        
+        return streak > 0 ? streak : nil
     }
     
     private func saveEntry() {
@@ -188,24 +400,29 @@ struct InputView: View {
             weight: weightDouble
         )
         
-        saveAnimation = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            saveAnimation = false
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            saveAnimation = true
         }
         
-        dataStore.addEntry(entry)
-        achievementsManager.checkAchievements(entries: dataStore.entries, goals: goalsManager.currentGoals)
-        
-        if !achievementsManager.recentlyUnlocked.isEmpty {
-            showingAchievement = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                achievementsManager.recentlyUnlocked.removeAll()
-                showingAchievement = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            dataStore.addEntry(entry)
+            achievementsManager.checkAchievements(entries: dataStore.entries, goals: goalsManager.currentGoals)
+            
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                saveAnimation = false
             }
+            
+            if !achievementsManager.recentlyUnlocked.isEmpty {
+                showingAchievement = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    achievementsManager.recentlyUnlocked.removeAll()
+                    showingAchievement = false
+                }
+            }
+            
+            alertMessage = "🎉 Your health entry has been saved successfully!"
+            showingAlert = true
         }
-        
-        alertMessage = "Your health entry has been saved successfully!"
-        showingAlert = true
     }
     
     private func loadTodaysEntry() {
@@ -221,7 +438,9 @@ struct InputView: View {
     }
 }
 
-struct HealthInputCard: View {
+// MARK: - Modern Components
+
+struct ModernHealthCard: View {
     let icon: String
     let title: String
     let subtitle: String
@@ -229,166 +448,197 @@ struct HealthInputCard: View {
     let placeholder: String
     let keyboardType: UIKeyboardType
     let color: Color
+    let index: Int
+    @State private var isActive = false
+    @State private var cardScale = 0.8
+    @State private var cardOpacity = 0.0
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
+        VStack(spacing: 12) {
+            // Icon section
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [color.opacity(0.2), color.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 50, height: 50)
+                
                 Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .frame(width: 32, height: 32)
-                    .background(
-                        LinearGradient(
-                            colors: [color, color.opacity(0.7)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .cornerRadius(8)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(color)
             }
             
+            // Title section
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.primary)
+                
+                Text(subtitle)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+            
+            // Input section
             TextField(placeholder, text: $value)
-                .font(.title2)
-                .fontWeight(.medium)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(color)
+                .multilineTextAlignment(.center)
                 .keyboardType(keyboardType)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-        }
-        .padding(20)
-        .background(
-            LinearGradient(
-                colors: [Color(.systemGray6), Color(.systemGray5)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .cornerRadius(16)
-        .shadow(color: color.opacity(0.2), radius: 4, x: 0, y: 2)
-    }
-}
-
-struct MoodSelectorCard: View {
-    @Binding var selectedMood: MoodLevel
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "face.smiling")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .frame(width: 32, height: 32)
-                    .background(
-                        LinearGradient(
-                            colors: [.yellow, .orange],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                .textFieldStyle(PlainTextFieldStyle())
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(color.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(isActive ? color : Color.clear, lineWidth: 2)
                         )
-                    )
-                    .cornerRadius(8)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Mood")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    Text("How are you feeling today?")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-            }
-            
-            HStack(spacing: 12) {
-                ForEach(MoodLevel.allCases, id: \.self) { mood in
-                    Button(action: {
-                        selectedMood = mood
-                    }) {
-                        VStack(spacing: 4) {
-                            Text(mood.emoji)
-                                .font(.title)
-                            Text(mood.rawValue.prefix(4))
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(selectedMood == mood ? mood.color.opacity(0.3) : Color.clear)
-                        .cornerRadius(8)
+                )
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        isActive = true
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
-            }
+                .onSubmit {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        isActive = false
+                    }
+                }
         }
         .padding(20)
         .background(
-            LinearGradient(
-                colors: [Color(.systemGray6), Color(.systemGray5)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(.systemBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(isActive ? color.opacity(0.3) : Color.clear, lineWidth: 1)
+                )
         )
-        .cornerRadius(16)
-        .shadow(color: .yellow.opacity(0.2), radius: 4, x: 0, y: 2)
+        .scaleEffect(cardScale)
+        .opacity(cardOpacity)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(Double(index) * 0.1), value: cardScale)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(Double(index) * 0.1), value: cardOpacity)
+        .onAppear {
+            cardScale = 1.0
+            cardOpacity = 1.0
+        }
     }
 }
 
-struct GoalsProgressCard: View {
+struct ModernGoalsProgressCard: View {
     let entry: HealthEntry
     @EnvironmentObject var goalsManager: GoalsManager
     
     var body: some View {
         let progress = goalsManager.getGoalProgress(for: entry)
         
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 16) {
             HStack {
-                Text("Today's Progress")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Today's Progress")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.primary)
+                    
+                    Text("Keep going, you're doing great!")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
                 
                 Spacer()
                 
-                Text("\(Int(progress.overallProgress * 100))%")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.blue)
+                ZStack {
+                    Circle()
+                        .stroke(Color(.systemGray4), lineWidth: 8)
+                        .frame(width: 60, height: 60)
+                    
+                    Circle()
+                        .trim(from: 0, to: CGFloat(progress.overallProgress))
+                        .stroke(
+                            LinearGradient(
+                                colors: [.green, .blue],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                        )
+                        .frame(width: 60, height: 60)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.easeInOut(duration: 1.0), value: progress.overallProgress)
+                    
+                    Text("\(Int(progress.overallProgress * 100))%")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.primary)
+                }
             }
             
-            ProgressBar(progress: progress.overallProgress, color: .blue)
+            // Mini progress indicators
+            HStack(spacing: 16) {
+                MiniProgressIndicator(title: "Steps", progress: progress.stepsProgress, color: .green)
+                MiniProgressIndicator(title: "Water", progress: progress.waterProgress, color: .blue)
+                MiniProgressIndicator(title: "Sleep", progress: progress.sleepProgress, color: .purple)
+                MiniProgressIndicator(title: "Calories", progress: progress.caloriesProgress, color: .orange)
+            }
         }
-        .padding(20)
+        .padding(24)
         .background(
-            LinearGradient(
-                colors: [.blue.opacity(0.1), .purple.opacity(0.1)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
                     LinearGradient(
-                        colors: [.blue.opacity(0.3), .purple.opacity(0.3)],
+                        colors: [.green.opacity(0.1), .blue.opacity(0.1)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(
+                            LinearGradient(
+                                colors: [.green.opacity(0.3), .blue.opacity(0.3)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
                 )
         )
     }
 }
 
-struct AchievementPopup: View {
+struct MiniProgressIndicator: View {
+    let title: String
+    let progress: Double
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .stroke(color.opacity(0.3), lineWidth: 3)
+                    .frame(width: 24, height: 24)
+                
+                Circle()
+                    .trim(from: 0, to: CGFloat(progress))
+                    .stroke(color, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 24, height: 24)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.8), value: progress)
+            }
+            
+            Text(title)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.secondary)
+        }
+    }
+}
+
+struct ModernAchievementPopup: View {
     let achievements: [Achievement]
     @Binding var isShowing: Bool
     
@@ -398,39 +648,45 @@ struct AchievementPopup: View {
                 Spacer()
                 
                 ForEach(achievements) { achievement in
-                    HStack {
-                        Image(systemName: achievement.icon)
-                            .font(.title)
-                            .foregroundColor(achievement.colorValue)
+                    HStack(spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(achievement.colorValue.opacity(0.2))
+                                .frame(width: 50, height: 50)
+                            
+                            Image(systemName: achievement.icon)
+                                .font(.title2)
+                                .foregroundColor(achievement.colorValue)
+                        }
                         
-                        VStack(alignment: .leading) {
-                            Text("Achievement Unlocked!")
-                                .font(.caption)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("🎉 Achievement Unlocked!")
+                                .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.secondary)
+                            
                             Text(achievement.title)
-                                .font(.headline)
-                                .fontWeight(.bold)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
                         }
                         
                         Spacer()
                     }
-                    .padding()
+                    .padding(20)
                     .background(
-                        LinearGradient(
-                            colors: [achievement.colorValue.opacity(0.2), achievement.colorValue.opacity(0.1)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(.systemBackground))
+                            .shadow(color: achievement.colorValue.opacity(0.3), radius: 15, x: 0, y: 8)
                     )
-                    .cornerRadius(12)
-                    .shadow(radius: 8)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .move(edge: .top).combined(with: .opacity)
+                    ))
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 20)
                 
                 Spacer()
             }
-            .animation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0), value: isShowing)
+            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isShowing)
         }
     }
 }
