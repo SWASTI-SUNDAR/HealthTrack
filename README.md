@@ -233,8 +233,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   **⭐ Star this repo if you found it helpful! ⭐**
   
   <br>
-  
-  <a href="https://instagram.com/swasti-sundar">
-    <img src="https://www.instagram.com/swasti_sundar_/" alt="Instagram Follow">
-  </a>
+
 </div>
