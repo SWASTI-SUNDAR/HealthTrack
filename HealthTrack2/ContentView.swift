@@ -14,6 +14,18 @@ struct ContentView: View {
                     Image(systemName: "chart.line.uptrend.xyaxis")
                     Text("Summary")
                 }
+            
+            GoalsView()
+                .tabItem {
+                    Image(systemName: "target")
+                    Text("Goals")
+                }
+            
+            AchievementsView()
+                .tabItem {
+                    Image(systemName: "trophy.fill")
+                    Text("Achievements")
+                }
         }
         .accentColor(.blue)
     }
@@ -22,4 +34,6 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environmentObject(HealthDataStore())
+        .environmentObject(GoalsManager())
+        .environmentObject(AchievementsManager())
 }
