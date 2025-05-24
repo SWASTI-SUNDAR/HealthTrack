@@ -225,16 +225,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  <h3>🌟 Made with ❤️ and SwiftUI 🌟</h3>
-  <p><em>Transforming health tracking, one day at a time</em></p>
-  
-  <br>
-  
-  **⭐ Star this repo if you found it helpful! ⭐**
-  
-  <br>
-  
-  <a href="https://twitter.com/yourusername">
-    <img src="https://img.shields.io/twitter/follow/yourusername?style=social" alt="Twitter Follow">
-  </a>
+ <h3>🌟 Made with ❤️ and SwiftUI 🌟</h3>
+    <p><em>Transforming health tracking, one day at a time</em></p>
+    
+    <br>
+    
+    **⭐ Star this repo if you found it helpful! ⭐**
+    
+    <br>
+    
+    <a href="https://github.com/swasti-sundar">
+        <img src="https://img.shields.io/github/followers/swasti-sundar?style=social" alt="GitHub Follow">
+    </a>
+    <a href="https://twitter.com/swasti-sundar">
+        <img src="https://img.shields.io/twitter/follow/swasti-sundar?style=social" alt="Twitter Follow">
+    </a>
+    <a href="https://linkedin.com/in/swasti-sundar">
+        <img src="https://img.shields.io/badge/LinkedIn-Connect-blue?style=social&logo=linkedin" alt="LinkedIn">
+    </a>
+    <a href="https://instagram.com/swasti-sundar">
+        <img src="https://img.shields.io/badge/Instagram-Follow-pink?style=social&logo=instagram" alt="Instagram">
+    </a>
 </div>
