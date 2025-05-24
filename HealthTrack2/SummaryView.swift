@@ -4,11 +4,13 @@ import Charts
 struct SummaryView: View {
     @EnvironmentObject var dataStore: HealthDataStore
     @EnvironmentObject var goalsManager: GoalsManager
+    @EnvironmentObject var healthInsightsManager: HealthInsightsManager
     @State private var selectedMetric: HealthMetric = .steps
     @State private var selectedTimeRange: TimeRange = .week
     @State private var selectedEntry: HealthEntry? = nil
     @State private var animateCharts = false
     @State private var showingDetails = false
+    @State private var showingInsights = false
     
     enum HealthMetric: String, CaseIterable {
         case steps = "Steps"
@@ -64,7 +66,7 @@ struct SummaryView: View {
                         Color.blue.opacity(0.05),
                         Color.purple.opacity(0.05),
                         Color.pink.opacity(0.02),
-                        Color.white
+                        Color.themeBackground
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -76,14 +78,24 @@ struct SummaryView: View {
                         // Modern Header
                         modernHeaderSection
                         
+                        // Health Insights Section
+                        if !healthInsightsManager.insights.isEmpty {
+                            healthInsightsSection
+                        }
+                        
                         // Time Range Selector
                         timeRangeSelectorSection
                         
                         // Overview Cards
                         overviewCardsSection
                         
-                        // Interactive Chart Section
-                        chartSection
+                        // Enhanced Charts
+                        EnhancedChartView(
+                            metric: selectedMetric,
+                            entries: getEntriesForTimeRange(),
+                            animate: animateCharts
+                        )
+                        .frame(height: 280)
                         
                         // Detailed Analytics
                         analyticsSection
@@ -106,6 +118,9 @@ struct SummaryView: View {
                 if let entry = selectedEntry {
                     EntryDetailView(entry: entry)
                 }
+            }
+            .sheet(isPresented: $showingInsights) {
+                HealthInsightsDetailView()
             }
         }
     }
@@ -197,6 +212,32 @@ struct SummaryView: View {
             )
         }
         .padding(.top, 20)
+    }
+    
+    private var healthInsightsSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Health Insights")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.themePrimary)
+                
+                Spacer()
+                
+                Button(action: {
+                    showingInsights = true
+                }) {
+                    Text("View All")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.themeAccent)
+                }
+            }
+            
+            LazyVStack(spacing: 12) {
+                ForEach(Array(healthInsightsManager.insights.prefix(3))) { insight in
+                    HealthInsightCard(insight: insight)
+                }
+            }
+        }
     }
     
     private var timeRangeSelectorSection: some View {
@@ -974,8 +1015,179 @@ struct DetailMetricCard: View {
     }
 }
 
+struct HealthInsightCard: View {
+    let insight: HealthInsight
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Priority indicator
+            RoundedRectangle(cornerRadius: 2)
+                .fill(insight.priority.color)
+                .frame(width: 4, height: 40)
+            
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(insight.color.opacity(0.2))
+                    .frame(width: 40, height: 40)
+                
+                Image(systemName: insight.icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(insight.color)
+            }
+            
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(insight.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.themePrimary)
+                    
+                    Spacer()
+                    
+                    if let value = insight.value {
+                        Text(value)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(insight.color)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(insight.color.opacity(0.1))
+                            .cornerRadius(4)
+                    }
+                }
+                
+                Text(insight.description)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.themeSecondary)
+                    .lineLimit(2)
+            }
+            
+            // Action button
+            if let actionTitle = insight.actionTitle {
+                Button(action: {
+                    // Handle action
+                }) {
+                    Text(actionTitle)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(insight.color)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(insight.color.opacity(0.1))
+                        .cornerRadius(6)
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.themeSecondaryBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(insight.color.opacity(0.2), lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct EnhancedChartsView: View {
+    let entries: [HealthEntry]
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Enhanced Insights")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            
+            // Sample enhanced chart using steps and sleep data
+            if !entries.isEmpty {
+                Chart {
+                    ForEach(entries) { entry in
+                        LineMark(
+                            x: .value("Date", entry.date, unit: .day),
+                            y: .value("Steps", entry.steps)
+                        )
+                        .foregroundStyle(Color.green)
+                        .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+                        
+                        LineMark(
+                            x: .value("Date", entry.date, unit: .day),
+                            y: .value("Sleep", entry.sleepHours)
+                        )
+                        .foregroundStyle(Color.blue)
+                        .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+                    }
+                }
+                .frame(height: 300)
+                .padding(.horizontal, 20)
+            } else {
+                VStack {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+                    
+                    Text("No enhanced data available")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                .frame(height: 300)
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(.systemBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        )
+    }
+}
+
+struct HealthInsightsDetailView: View {
+    @EnvironmentObject var healthInsightsManager: HealthInsightsManager
+    @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(spacing: 16) {
+                    ForEach(healthInsightsManager.insights) { insight in
+                        HealthInsightCard(insight: insight)
+                    }
+                }
+                .padding(20)
+            }
+            .background(Color.themeBackground)
+            .navigationTitle("Health Insights")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        themeManager.setTheme(
+                            themeManager.currentTheme == .dark ? .light : .dark
+                        )
+                    }) {
+                        Image(systemName: themeManager.currentTheme == .dark ? "sun.max.fill" : "moon.fill")
+                            .foregroundColor(.themeAccent)
+                    }
+                }
+            }
+        }
+    }
+}
+
 #Preview {
     SummaryView()
         .environmentObject(HealthDataStore())
         .environmentObject(GoalsManager())
+        .environmentObject(HealthInsightsManager())
 }

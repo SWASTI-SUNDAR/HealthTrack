@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct HealthEntry: Identifiable, Codable {
+struct HealthEntry: Identifiable, Codable, Equatable {
     let id = UUID()
     let date: Date
     var steps: Int
@@ -23,6 +23,19 @@ struct HealthEntry: Identifiable, Codable {
         self.weight = weight
     }
     
+    // Equatable conformance
+    static func == (lhs: HealthEntry, rhs: HealthEntry) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.date == rhs.date &&
+               lhs.steps == rhs.steps &&
+               lhs.waterIntake == rhs.waterIntake &&
+               lhs.sleepHours == rhs.sleepHours &&
+               lhs.heartRate == rhs.heartRate &&
+               lhs.caloriesBurned == rhs.caloriesBurned &&
+               lhs.mood == rhs.mood &&
+               lhs.weight == rhs.weight
+    }
+    
     var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -36,7 +49,7 @@ struct HealthEntry: Identifiable, Codable {
     }
 }
 
-enum MoodLevel: String, CaseIterable, Codable {
+enum MoodLevel: String, CaseIterable, Codable, Equatable {
     case veryHappy = "Very Happy"
     case happy = "Happy"
     case neutral = "Neutral"
